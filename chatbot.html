@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Basic styles for chatbot UI */
+        .chat-container {
+            width: 400px;
+            margin: 50px auto;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .chat-box {
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .chat-box .message {
+            margin-bottom: 10px;
+        }
+        .chat-box .user {
+            text-align: right;
+        }
+        .chat-box .bot {
+            text-align: left;
+        }
+        .chat-input {
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+        }
+        .chat-input button {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h4>Chatbot</h4>
+    </div>
+    <div class="chat-box" id="chat-box">
+        <!-- Messages will be displayed here -->
+    </div>
+    <div class="chat-input">
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button onclick="sendMessage()" class="btn btn-primary">Send</button>
+        <button onclick="startRecording()" class="btn btn-secondary">🎤</button>
+    </div>
+</div>
+
+<script>
+    // Function to append a message to the chatbox
+    function appendMessage(sender, message) {
+        const chatBox = document.getElementById('chat-box');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', sender);
+        messageElement.innerText = message;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to the bottom
+    }
+
+    // Function to send message to chatbot API (text-based interaction)
+    function sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const message = messageInput.value.trim();
+        if (message === "") return;
+
+        // Display user message
+        appendMessage('user', `You: ${message}`);
+        messageInput.value = "";  // Clear input box
+
+        // Send message to backend chatbot API
+        fetch('/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const botResponse = data.sentiment[0].label === "POSITIVE" 
+                ? "Thank you for your positive feedback!"
+                : "I'm sorry to hear that. Let me assist you further.";
+            appendMessage('bot', `Bot: ${botResponse}`);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            appendMessage('bot', 'Bot: Sorry, something went wrong.');
+        });
+    }
+
+    // Voice input (using MediaRecorder API)
+    let mediaRecorder;
+    let audioChunks = [];
+
+    function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+
+                mediaRecorder.addEventListener("dataavailable", event => {
+                    audioChunks.push(event.data);
+                });
+
+                mediaRecorder.addEventListener("stop", () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob);
+
+                    // Send audio to the /analyze-voice endpoint
+                    fetch('/analyze-voice', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        appendMessage('bot', `Bot: ${data.transcript}`);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        appendMessage('bot', 'Bot: Sorry, something went wrong.');
+                    });
+                });
+
+                setTimeout(() => {
+                    mediaRecorder.stop();  // Stop recording after 5 seconds
+                }, 5000);
+            });
+    }
+</script>
+
+</body>
+</html>
