@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">Customer Sentiment Dashboard</h1>
+
+        <!-- Filter Form -->
+        <form method="GET" action="/dashboard" class="form-inline mb-4">
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="customer_id" class="sr-only">Customer ID</label>
+                <input type="text" class="form-control" id="customer_id" name="customer_id" placeholder="Customer ID">
+            </div>
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="start_date" class="sr-only">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date">
+            </div>
+            <div class="form-group mx-sm-3 mb-2">
+                <label for="end_date" class="sr-only">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date">
+            </div>
+            <button type="submit" class="btn btn-primary mb-2">Filter</button>
+        </form>
+
+        <!-- Plotly Graph for Sentiment Trend -->
+        <div id="sentiment-chart"></div>
+
+        <h2 class="my-4">Interaction Logs</h2>
+
+        <!-- Interaction Logs Table -->
+        <table class="table table-striped" id="interaction-table">
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Text</th>
+                    <th>Emotion</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="interaction-body">
+                <!-- Rows will be dynamically updated -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- JavaScript for AJAX and Real-Time Updates -->
+    <script>
+        // Function to fetch new interaction data from the API
+        function fetchInteractionData() {
+            fetch('/api/interaction-data')
+                .then(response => response.json())
+                .then(data => {
+                    updateSentimentChart(data.sentiment_trend);
+                    updateInteractionTable(data.interactions);
+                });
+        }
+
+        // Function to update the Plotly sentiment chart
+        function updateSentimentChart(sentimentData) {
+            const timestamps = sentimentData.map(d => d.timestamp);
+            const positiveCounts = sentimentData.filter(d => d.emotion === 'POSITIVE').map(d => d.count);
+            const negativeCounts = sentimentData.filter(d => d.emotion === 'NEGATIVE').map(d => d.count);
+
+            const plotData = [
+                { x: timestamps, y: positiveCounts, type: 'scatter', name: 'Positive' },
+                { x: timestamps, y: negativeCounts, type: 'scatter', name: 'Negative' }
+            ];
+
+            Plotly.newPlot('sentiment-chart', plotData, { title: 'Sentiment Trend Over Time' });
+        }
+
+        // Function to update the interaction logs table
+        function updateInteractionTable(interactions) {
+            const interactionBody = document.getElementById('interaction-body');
+            interactionBody.innerHTML = '';  // Clear existing rows
+
+            interactions.forEach(interaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${interaction.customer_id}</td>
+                    <td>${interaction.text}</td>
+                    <td>${interaction.emotion}</td>
+                    <td>${interaction.timestamp}</td>
+                `;
+                interactionBody.appendChild(row);
+            });
+        }
+
+        // Poll the server for new data every 10 seconds
+        setInterval(fetchInteractionData, 10000);  // 10,000 milliseconds = 10 seconds
+
+        // Fetch data immediately when the page loads
+        fetchInteractionData();
+    </script>
+</body>
+</html>
