@@ -4,49 +4,96 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            background-color: #f4f7fa;
+        }
+        h1, h2 {
+            color: #343a40;
+        }
+        .filter-form {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .table-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        /* Responsive styles */
+        @media (max-width: 576px) {
+            .filter-form {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1 class="my-4">Customer Sentiment Dashboard</h1>
+    <div class="container mt-4">
+        <h1 class="mb-4">Customer Sentiment Dashboard</h1>
 
         <!-- Filter Form -->
-        <form method="GET" action="/dashboard" class="form-inline mb-4">
-            <div class="form-group mx-sm-3 mb-2">
-                <label for="customer_id" class="sr-only">Customer ID</label>
-                <input type="text" class="form-control" id="customer_id" name="customer_id" placeholder="Customer ID">
-            </div>
-            <div class="form-group mx-sm-3 mb-2">
-                <label for="start_date" class="sr-only">Start Date</label>
-                <input type="date" class="form-control" id="start_date" name="start_date">
-            </div>
-            <div class="form-group mx-sm-3 mb-2">
-                <label for="end_date" class="sr-only">End Date</label>
-                <input type="date" class="form-control" id="end_date" name="end_date">
-            </div>
-            <button type="submit" class="btn btn-primary mb-2">Filter</button>
-        </form>
+        <div class="filter-form mb-4">
+            <form method="GET" action="/dashboard" class="form-inline">
+                <div class="form-group mx-sm-2">
+                    <input type="text" class="form-control" id="customer_id" name="customer_id" placeholder="Customer ID">
+                </div>
+                <div class="form-group mx-sm-2">
+                    <input type="date" class="form-control" id="start_date" name="start_date">
+                </div>
+                <div class="form-group mx-sm-2">
+                    <input type="date" class="form-control" id="end_date" name="end_date">
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </form>
+        </div>
 
         <!-- Plotly Graph for Sentiment Trend -->
-        <div id="sentiment-chart"></div>
+        <div class="chart-container mb-4">
+            <div id="sentiment-chart" style="height: 400px;"></div>
+        </div>
 
-        <h2 class="my-4">Interaction Logs</h2>
+        <h2 class="mb-4">Interaction Logs</h2>
 
         <!-- Interaction Logs Table -->
-        <table class="table table-striped" id="interaction-table">
-            <thead>
-                <tr>
-                    <th>Customer ID</th>
-                    <th>Text</th>
-                    <th>Emotion</th>
-                    <th>Timestamp</th>
-                </tr>
-            </thead>
-            <tbody id="interaction-body">
-                <!-- Rows will be dynamically updated -->
-            </tbody>
-        </table>
+        <div class="table-container">
+            <table class="table table-striped" id="interaction-table">
+                <thead>
+                    <tr>
+                        <th>Customer ID</th>
+                        <th>Text</th>
+                        <th>Emotion</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="interaction-body">
+                    <!-- Rows will be dynamically updated -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- JavaScript for AJAX and Real-Time Updates -->
@@ -68,11 +115,18 @@
             const negativeCounts = sentimentData.filter(d => d.emotion === 'NEGATIVE').map(d => d.count);
 
             const plotData = [
-                { x: timestamps, y: positiveCounts, type: 'scatter', name: 'Positive' },
-                { x: timestamps, y: negativeCounts, type: 'scatter', name: 'Negative' }
+                { x: timestamps, y: positiveCounts, type: 'scatter', mode: 'lines+markers', name: 'Positive', line: { color: 'green' }},
+                { x: timestamps, y: negativeCounts, type: 'scatter', mode: 'lines+markers', name: 'Negative', line: { color: 'red' }}
             ];
 
-            Plotly.newPlot('sentiment-chart', plotData, { title: 'Sentiment Trend Over Time' });
+            const layout = {
+                title: 'Sentiment Trend Over Time',
+                xaxis: { title: 'Time' },
+                yaxis: { title: 'Count' },
+                margin: { t: 40, r: 40, b: 40, l: 40 },
+            };
+
+            Plotly.newPlot('sentiment-chart', plotData, layout);
         }
 
         // Function to update the interaction logs table
