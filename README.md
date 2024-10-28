@@ -1,51 +1,90 @@
-# Vultr-Hackathon
-Project Overview
-This project is an Emotion-Aware AI Chatbot designed to provide empathetic and predictive customer service. Built on Laravel with Vultr Serverless Functions for real-time inference, this chatbot can analyze user sentiment and respond appropriately. Additionally, it uses Vultr Object Storage to maintain user interaction history, enabling data-driven insights.
+# Emotion-Aware AI Chatbot
 
-#Project Structure
-Client Interface: JavaScript-powered frontend.
-Backend (Laravel): Manages interactions and calls serverless inference.
-Serverless Function: Processes inference using Hugging Face API.
-Object Storage: Stores user interactions.
-Getting Started
-Prerequisites
-Vultr Account: Compute instance and access to Serverless and Object Storage.
-Server Software: PHP, Python, Composer, Nginx.
-Setup Instructions
-Clone the Repository:
+This project is an **Emotion-Aware AI Chatbot** designed to provide empathetic and predictive customer service. Built with **Laravel** for backend processing and **Vultr Serverless Functions** for real-time inference, this chatbot can analyze user sentiment and respond accordingly. The chatbot also uses **Vultr Object Storage** to maintain user interaction history, enabling data-driven insights and personalized responses.
 
+## Project Structure
+
+1. **Client Interface**: JavaScript-powered frontend that enables user interactions with the chatbot.
+2. **Backend (Laravel)**: Manages user interactions, calls the serverless inference API, and handles data storage.
+3. **Serverless Function**: Executes sentiment and emotion analysis using Hugging Face API.
+4. **Object Storage**: Stores interaction history for data insights.
+
+## Getting Started
+
+### Prerequisites
+
+- **Vultr Account**: Provision a compute instance, with access to Serverless Functions and Object Storage.
+- **Server Software**: Ensure PHP, Python, Composer, and Nginx are installed on the server.
+
+### Setup Instructions
+
+#### Step 1: Clone the Repository
+
+```bash
 git clone https://github.com/shravani-sys/Vultr-Hackathon.git
 cd Vultr-Hackathon
-Install Python Requirements:
+```
 
+#### Step 2: Install Python Requirements
 
+If your Python app requires dependencies, install them using `requirements.txt`:
+
+```bash
 pip3 install -r requirements.txt
-Run Python Application:
+```
 
+#### Step 3: Run Python Application
 
+Run the Python app to confirm it’s working (assuming `app.py` is the entry point):
+
+```bash
 python3 app.py
-Set Up Laravel Application:
+```
 
-Move to Laravel directory:
+#### Step 4: Set Up Laravel Application
 
-cd /var/www
-composer create-project --prefer-dist laravel/laravel chatbot-app
-cd chatbot-app
-Configure .env with the necessary environment settings:
-dotenv
+1. Move to the Laravel directory and create the project (if not already included):
 
-APP_NAME=Chatbot
-APP_ENV=production
-APP_URL=http://your_server_ip
-Add Chatbot API Route in Laravel:
+   ```bash
+   cd /var/www
+   composer create-project --prefer-dist laravel/laravel chatbot-app
+   cd chatbot-app
+   ```
 
-Open routes/api.php and add:
+2. Configure the environment file:
+   - Copy `.env.example` to `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Update the `.env` file with necessary environment variables:
+     ```dotenv
+     APP_NAME=Chatbot
+     APP_ENV=production
+     APP_KEY=base64:YourGeneratedAppKey
+     APP_DEBUG=false
+     APP_URL=http://your_server_ip
+     ```
 
+#### Step 5: Add Chatbot API Route in Laravel
+
+Open `routes/api.php` and add an API route for chatbot inference:
+
+```php
+use App\Http\Controllers\ChatbotController;
 Route::post('/infer', [ChatbotController::class, 'infer']);
-Create Chatbot Controller:
+```
 
-Generate the controller and update ChatbotController.php to use Vultr’s serverless function for inference:
+#### Step 6: Create Chatbot Controller
 
+Generate the controller and add code to call the serverless function for inference:
+
+```bash
+php artisan make:controller ChatbotController
+```
+
+Update `app/Http/Controllers/ChatbotController.php`:
+
+```php
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -56,6 +95,8 @@ class ChatbotController extends Controller
     public function infer(Request $request)
     {
         $userMessage = $request->input('message');
+
+        // Call to Vultr Serverless Function
         $response = Http::post('YOUR_SERVERLESS_URL', [
             'message' => $userMessage,
         ]);
@@ -63,14 +104,26 @@ class ChatbotController extends Controller
         return response()->json($response->json());
     }
 }
-Configure Nginx for PHP and Python Applications:
+```
 
-Create and configure /etc/nginx/sites-available/vultr-app:
+Replace `YOUR_SERVERLESS_URL` with the URL of your Vultr serverless function.
 
+#### Step 7: Configure Nginx for PHP and Python Applications
+
+Create and edit a new Nginx configuration file:
+
+```bash
+sudo nano /etc/nginx/sites-available/vultr-app
+```
+
+Paste the following configuration:
+
+```nginx
 server {
     listen 80;
     server_name your_server_ip;
 
+    # Laravel app
     location / {
         root /var/www/chatbot-app/public;
         index index.php index.html;
@@ -82,18 +135,29 @@ server {
         fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
     }
 
+    # Python app
     location /python {
         proxy_pass http://127.0.0.1:5000;
     }
 }
-Restart Nginx:
+```
 
+Enable the configuration and restart Nginx:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/vultr-app /etc/nginx/sites-enabled/
 sudo systemctl restart nginx
-Testing the Application:
+```
 
-Send a POST request to test the /api/infer endpoint:
+#### Step 8: Test the Application
 
+Use `curl` or Postman to test the Laravel chatbot API endpoint:
+
+```bash
 curl -X POST http://your_server_ip/api/infer -H "Content-Type: application/json" -d '{"message": "Hello"}'
+```
 
-#Technical Documentation
-See the PDF documentation for architecture details, setup instructions, and API specifications.
+### Technical Documentation
+
+For more information on system architecture, API documentation, and component details, refer to the `documentation.pdf` file included in this repository.
+
