@@ -17,8 +17,6 @@ app = Flask(__name__)
 
 # Load the Vosk model for speech-to-text
 model_path = "models/vosk-model-small-en-us-0.15"
-if not os.path.exists(model_path):
-    raise ValueError("Model not found, please download it.")
 
 model = Model(model_path)
 
