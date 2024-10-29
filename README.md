@@ -16,148 +16,75 @@ This project is an **Emotion-Aware AI Chatbot** designed to provide empathetic a
 - **Vultr Account**: Provision a compute instance, with access to Serverless Functions and Object Storage.
 - **Server Software**: Ensure PHP, Python, Composer, and Nginx are installed on the server.
 
-### Setup Instructions
+Here's an updated **Build and Deployment Instructions** section for your README file:
+
+---
+
+### Build and Deployment Instructions
+
+Follow these steps to build, deploy, and launch the Emotion-Aware AI Chatbot on your Vultr server.
 
 #### Step 1: Clone the Repository
 
-```bash
-git clone https://github.com/shravani-sys/Vultr-Hackathon.git
-cd Vultr-Hackathon
-```
-
-#### Step 2: Install Python Requirements
-
-If your Python app requires dependencies, install them using `requirements.txt`:
-
-```bash
-pip3 install -r requirements.txt
-```
-
-#### Step 3: Run Python Application
-
-Run the Python app to confirm it’s working (assuming `app.py` is the entry point):
-
-```bash
-python3 app.py
-```
-
-#### Step 4: Set Up Laravel Application
-
-1. Move to the Laravel directory and create the project (if not already included):
+1. Clone the project repository from GitHub:
 
    ```bash
-   cd /var/www
-   composer create-project --prefer-dist laravel/laravel chatbot-app
-   cd chatbot-app
+   git clone https://github.com/shravani-sys/Vultr-Hackathon.git
+   cd Vultr-Hackathon
    ```
 
-2. Configure the environment file:
+#### Step 2: Set Up and Run the Python Application
+
+1. Install dependencies required by the Python application:
+
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+2. Run the Python application to ensure it’s working correctly (replace `app.py` with your main file):
+
+   ```bash
+   python3 app.py
+   ```
+
+#### Step 3: Set Up and Configure Laravel Application
+
+1. Navigate to the Laravel project folder and install dependencies if required:
+
+   ```bash
+   cd /var/www/chatbot-app
+   composer install
+   ```
+
+2. Configure environment settings:
    - Copy `.env.example` to `.env`:
      ```bash
      cp .env.example .env
      ```
-   - Update the `.env` file with necessary environment variables:
-     ```dotenv
-     APP_NAME=Chatbot
-     APP_ENV=production
-     APP_KEY=base64:YourGeneratedAppKey
-     APP_DEBUG=false
-     APP_URL=http://your_server_ip
-     ```
+   - Update the `.env` file with database, API keys, and server URLs.
 
-#### Step 5: Add Chatbot API Route in Laravel
+3. Generate an application key for Laravel:
 
-Open `routes/api.php` and add an API route for chatbot inference:
+   ```bash
+   php artisan key:generate
+   ```
 
-```php
-use App\Http\Controllers\ChatbotController;
-Route::post('/infer', [ChatbotController::class, 'infer']);
-```
+#### Step 4: Set Up Serverless Function on Vultr
 
-#### Step 6: Create Chatbot Controller
+1. Deploy your sentiment and emotion analysis function on Vultr Serverless.
+2. Note the function’s URL endpoint and update the `ChatbotController` in Laravel with this URL.
 
-Generate the controller and add code to call the serverless function for inference:
+#### Step 5: Configure the Nginx Server
 
-```bash
-php artisan make:controller ChatbotController
-```
+1. Set up an Nginx configuration for the Laravel and Python applications.
+2. Paste and save the configuration, then restart Nginx:
 
-Update `app/Http/Controllers/ChatbotController.php`:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/vultr-app /etc/nginx/sites-enabled/
+   sudo systemctl restart nginx
+   ```
 
-```php
-namespace App\Http\Controllers;
+#### Step 6: Test the Application
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-
-class ChatbotController extends Controller
-{
-    public function infer(Request $request)
-    {
-        $userMessage = $request->input('message');
-
-        // Call to Vultr Serverless Function
-        $response = Http::post('YOUR_SERVERLESS_URL', [
-            'message' => $userMessage,
-        ]);
-
-        return response()->json($response->json());
-    }
-}
-```
-
-Replace `YOUR_SERVERLESS_URL` with the URL of your Vultr serverless function.
-
-#### Step 7: Configure Nginx for PHP and Python Applications
-
-Create and edit a new Nginx configuration file:
-
-```bash
-sudo nano /etc/nginx/sites-available/vultr-app
-```
-
-Paste the following configuration:
-
-```nginx
-server {
-    listen 80;
-    server_name your_server_ip;
-
-    # Laravel app
-    location / {
-        root /var/www/chatbot-app/public;
-        index index.php index.html;
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
-    }
-
-    # Python app
-    location /python {
-        proxy_pass http://127.0.0.1:5000;
-    }
-}
-```
-
-Enable the configuration and restart Nginx:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/vultr-app /etc/nginx/sites-enabled/
-sudo systemctl restart nginx
-```
-
-#### Step 8: Test the Application
-
-Use `curl` or Postman to test the Laravel chatbot API endpoint:
-
-```bash
-curl -X POST http://your_server_ip/api/infer -H "Content-Type: application/json" -d '{"message": "Hello"}'
-```
-
-### Technical Documentation
-
-For more information on system architecture, API documentation, and component details, refer to the `documentation.pdf` file included in this repository.
+Test the API endpoints using tools like `curl` or Postman to ensure responses are as expected.
 
